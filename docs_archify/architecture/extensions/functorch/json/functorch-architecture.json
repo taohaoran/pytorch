@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "functorch：vmap/grad 函数变换与 AOTAutograd",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "纯函数 f", "pos": [30, 320], "size": [130, 60] },
+    { "id": "api", "type": "backend", "label": "变换 API", "sublabel": "apis.py vmap/grad", "pos": [220, 320], "size": [160, 80], "tag": "函数组合器" },
+    { "id": "vmap", "type": "database", "label": "vmap", "sublabel": "vmap.py:286", "pos": [450, 140], "size": [160, 70] },
+    { "id": "grad", "type": "messagebus", "label": "grad/jvp/vjp", "sublabel": "eager_transforms.py", "pos": [450, 320], "size": [170, 70] },
+    { "id": "fx", "type": "cloud", "label": "make_fx/functional_call", "sublabel": "抓 FX 图", "pos": [450, 500], "size": [170, 70] },
+    { "id": "aot", "type": "security", "label": "AOTAutograd", "sublabel": "aot_autograd.py", "pos": [730, 320], "size": [170, 80] },
+    { "id": "pk", "type": "external", "label": "Python key 分发", "sublabel": "python_key.py", "pos": [1010, 320], "size": [140, 70] }
+  ],
+  "connections": [
+    { "id": "u-a", "from": "user", "to": "api", "label": "组合变换", "variant": "emphasis" },
+    { "id": "a-v", "from": "api", "to": "vmap", "label": "向量化", "labelDy": -16 },
+    { "id": "a-g", "from": "api", "to": "grad", "label": "微分", "labelDy": 20 },
+    { "id": "a-f", "from": "api", "to": "fx", "label": "抓图", "labelDy": 16 },
+    { "id": "v-aot", "from": "vmap", "to": "aot", "label": "变换叠加", "labelDy": -14 },
+    { "id": "g-aot", "from": "grad", "to": "aot", "label": "前反向", "labelDy": 14 },
+    { "id": "aot-pk", "from": "aot", "to": "pk", "label": "Python key" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "vmap/grad 等以 dispatcher mode 栈方式叠加，可自由组合",
+      "make_fx 把可调用抓成 FX Graph，供 AOTAutograd 分区",
+      "AOTAutograd 分离前向/反向，供 inductor 编译"
+    ]}
+  ]
+}

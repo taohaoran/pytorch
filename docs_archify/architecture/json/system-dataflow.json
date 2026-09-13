@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "PyTorch torch.compile 编译数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 400]
+  },
+  "stages": [
+    { "label": "Python 源码" },
+    { "label": "追踪与守卫" },
+    { "label": "FX 图与分解" },
+    { "label": "Inductor 代码生成" },
+    { "label": "编译内核执行" }
+  ],
+  "nodes": [
+    { "id": "pycode", "type": "frontend", "label": "Python 字节码", "sublabel": "用户 nn.Module / frame", "stage": 0, "row": 0 },
+    { "id": "dynamo", "type": "backend", "label": "TorchDynamo", "sublabel": "字节码追踪 + Guard 守卫", "stage": 1, "row": 0 },
+    { "id": "fxgraph", "type": "backend", "label": "FX 图与分解", "sublabel": "AOTAutograd + 算子分解", "stage": 2, "row": 0 },
+    { "id": "inductor", "type": "backend", "label": "Inductor", "sublabel": "融合 + 代码生成 + 缓存", "stage": 3, "row": 0 },
+    { "id": "kernel", "type": "backend", "label": "编译内核", "sublabel": "GPU/CPU 加速执行", "stage": 4, "row": 0 }
+  ],
+  "flows": [
+    { "from": "pycode", "to": "dynamo", "label": "frame 求值拦截", "variant": "emphasis", "route": "straight" },
+    { "from": "dynamo", "to": "fxgraph", "label": "追踪生成 FX 图", "variant": "emphasis", "route": "straight" },
+    { "from": "fxgraph", "to": "inductor", "label": "分解规范化后算子", "variant": "emphasis", "route": "straight" },
+    { "from": "inductor", "to": "kernel", "label": "编译产物", "variant": "emphasis", "route": "straight" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键机制", "items": [
+      "Guard 守卫失败时回退 eager 重新编译",
+      "AOTAutograd 将前向/反向分离为独立 FX 图",
+      "算子分解表 (_decomp/_prims) 将复合算子降为基本原语",
+      "Inductor 调度器做算子融合，生成 Triton/C++ 内核",
+      "编译结果写入磁盘缓存，后续命中直接加载"
+    ] }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TorchInductor 代码生成架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1680, 520]
+  },
+  "components": [
+    { "id": "fx", "type": "external", "label": "FX GraphModule", "sublabel": "来自 dynamo/AOT", "pos": [30, 180], "size": [190, 60] },
+    { "id": "compilefx", "type": "backend", "label": "compile_fx_inner", "sublabel": "compile_fx.py:1018", "pos": [290, 180], "size": [210, 60] },
+    { "id": "lower", "type": "backend", "label": "Lowering", "sublabel": "lowering.py 算子降级", "pos": [560, 110], "size": [200, 60] },
+    { "id": "decomp", "type": "backend", "label": "Decomposition", "sublabel": "decomposition.py", "pos": [560, 250], "size": [200, 60] },
+    { "id": "ir", "type": "database", "label": "Inductor IR", "sublabel": "ir.py: Pointwise/Reduction", "pos": [830, 180], "size": [210, 60] },
+    { "id": "sched", "type": "backend", "label": "Scheduler", "sublabel": "scheduler.py 融合调度", "pos": [1100, 180], "size": [210, 60] },
+    { "id": "codegen", "type": "backend", "label": "CodeGen", "sublabel": "codegen/triton.py / cpp.py", "pos": [1370, 180], "size": [210, 60] },
+    { "id": "triton", "type": "external", "label": "Triton 编译器", "sublabel": "外部依赖", "pos": [1370, 60], "size": [210, 60] },
+    { "id": "cpprt", "type": "external", "label": "CPU/CUDA 运行时", "sublabel": "已编译内核", "pos": [1370, 300], "size": [210, 60] }
+  ],
+  "connections": [
+    { "id": "fx-cf", "from": "fx", "to": "compilefx", "label": "FX 图", "variant": "emphasis" },
+    { "id": "cf-l", "from": "compilefx", "to": "lower", "label": "降级", "labelDy": -14 },
+    { "id": "cf-d", "from": "compilefx", "to": "decomp", "label": "分解", "labelDy": 14 },
+    { "id": "l-ir", "from": "lower", "to": "ir", "labelDy": 14 },
+    { "id": "d-ir", "from": "decomp", "to": "ir", "labelDy": -14 },
+    { "id": "ir-s", "from": "ir", "to": "sched", "label": "融合", "labelDy": -14 },
+    { "id": "s-cg", "from": "sched", "to": "codegen", "label": "子图", "labelDy": -14 },
+    { "id": "cg-tr", "from": "codegen", "to": "triton", "fromSide": "top", "toSide": "bottom" },
+    { "id": "cg-cp", "from": "codegen", "to": "cpprt", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "Inductor IR 是 TVM 风格张量中间表示（Pointwise/Reduction/View）",
+      "Scheduler 决定哪些算子融合进同一个内核",
+      "CodeGen 后端：Triton（GPU）与 C++（CPU）"
+    ] }
+  ]
+}

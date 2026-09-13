@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "一次 backward 执行时序",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 720]
+  },
+  "participants": [
+    { "id": "py", "type": "external", "label": "Python", "sublabel": "backward" },
+    { "id": "eng", "type": "backend", "label": "Engine", "sublabel": "execute" },
+    { "id": "queue", "type": "messagebus", "label": "ReadyQueue", "sublabel": "任务队列" },
+    { "id": "worker", "type": "cloud", "label": "worker", "sublabel": "thread_main" },
+    { "id": "node", "type": "backend", "label": "Node", "sublabel": "apply" }
+  ],
+  "segments": [
+    { "from": 195, "to": 330, "label": "启动" },
+    { "from": 345, "to": 500, "label": "节点执行" },
+    { "from": 515, "to": 640, "label": "下游入队" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "py", "to": "eng", "y": 175, "label": "execute(root, grads)", "variant": "emphasis" },
+    { "id": "m2", "from": "eng", "to": "queue", "y": 225, "label": "push 根节点" },
+    { "id": "m3", "from": "worker", "to": "queue", "y": 280, "label": "pop NodeTask", "variant": "return" },
+    { "id": "m4", "from": "worker", "to": "node", "y": 380, "label": "evaluate_function→apply", "variant": "emphasis" },
+    { "id": "m5", "from": "node", "to": "worker", "y": 440, "label": "梯度输出", "variant": "return" },
+    { "id": "m6", "from": "worker", "to": "queue", "y": 540, "label": "下游就绪则 push", "variant": "emphasis" },
+    { "id": "m7", "from": "eng", "to": "py", "y": 620, "label": "完成返回", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "eng", "from": 175, "to": 620, "type": "backend" },
+    { "participant": "worker", "from": 280, "to": 540, "type": "cloud" }
+  ]
+}

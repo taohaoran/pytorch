@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "serialization：save/load 与 zipfile 序列化格式",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "torch.save/load", "pos": [30, 320], "size": [130, 60] },
+    { "id": "api", "type": "backend", "label": "save / load", "sublabel": "serialization.py:944,1315", "pos": [210, 320], "size": [160, 80], "tag": "Python 门面" },
+    { "id": "zip", "type": "database", "label": "zipfile 容器", "sublabel": "_open_zipfile_writer", "pos": [440, 140], "size": [160, 70] },
+    { "id": "pickle", "type": "messagebus", "label": "pickle 元数据", "sublabel": "pickle_module", "pos": [440, 320], "size": [160, 70] },
+    { "id": "safe", "type": "cloud", "label": "安全反序列化", "sublabel": "weights_only/safe_globals", "pos": [440, 500], "size": [170, 70] },
+    { "id": "cpp", "type": "security", "label": "PyTorchFileReader/Writer", "sublabel": "csrc/serialization.cpp", "pos": [700, 320], "size": [180, 80] },
+    { "id": "disk", "type": "external", "label": ".pt 文件", "sublabel": "磁盘/IO 流", "pos": [990, 320], "size": [150, 70] }
+  ],
+  "connections": [
+    { "id": "u-a", "from": "user", "to": "api", "label": "save/load", "variant": "emphasis" },
+    { "id": "a-z", "from": "api", "to": "zip", "label": "zip 包", "labelDy": -16 },
+    { "id": "a-p", "from": "api", "to": "pickle", "label": "pickle 状态", "labelDy": 18 },
+    { "id": "a-s", "from": "api", "to": "safe", "label": "白名单校验", "labelDy": 16 },
+    { "id": "z-c", "from": "zip", "to": "cpp", "label": "张量二进制", "labelDy": -14 },
+    { "id": "c-d", "from": "cpp", "to": "disk", "label": "读写文件" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "默认 _use_new_zipfile_serialization=True，新格式为 zip 容器",
+      "weights_only=True 仅反序列化张量，限制任意 pickle 执行",
+      "张量数据走 C++ PyTorchFileWriter，对象图走 pickle"
+    ]}
+  ]
+}

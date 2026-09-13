@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "nn-modules：Module 层级、Parameter、hooks 与 functional",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户模型代码", "sublabel": "继承 Module", "pos": [30, 320], "size": [130, 60] },
+    { "id": "module", "type": "backend", "label": "Module 基类", "sublabel": "modules/module.py:407", "pos": [210, 320], "size": [170, 80], "tag": "层级根" },
+    { "id": "param", "type": "database", "label": "Parameter", "sublabel": "parameter.py:30", "pos": [450, 140], "size": [160, 70] },
+    { "id": "containers", "type": "backend", "label": "容器", "sublabel": "Sequential/ModuleList/ModuleDict", "pos": [450, 320], "size": [170, 70] },
+    { "id": "hooks", "type": "messagebus", "label": "hooks 机制", "sublabel": "forward/backward/state_dict", "pos": [450, 500], "size": [170, 70] },
+    { "id": "functional", "type": "cloud", "label": "functional.py F.*", "sublabel": "无状态函数式算子", "pos": [720, 320], "size": [170, 80] },
+    { "id": "cops", "type": "security", "label": "C++ 算子 / Tensor", "sublabel": "torch._C 分发", "pos": [990, 320], "size": [160, 80] }
+  ],
+  "connections": [
+    { "id": "u-m", "from": "user", "to": "module", "label": "定义网络", "variant": "emphasis" },
+    { "id": "m-p", "from": "module", "to": "param", "label": "注册参数", "labelDy": -16 },
+    { "id": "m-c", "from": "module", "to": "containers", "label": "子模块组合" },
+    { "id": "m-h", "from": "module", "to": "hooks", "label": "钩子回调", "labelDy": 16 },
+    { "id": "c-f", "from": "containers", "to": "functional", "label": "forward 调 F.*" },
+    { "id": "f-c", "from": "functional", "to": "cops", "label": "委托算子内核" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "Parameter 是带 _is_param 标记的 Tensor，被 Module 注册后纳入 parameters() 遍历",
+      "Module.__call__ 触发 forward pre/full hooks，再调用用户 forward",
+      "functional.py 提供无状态算子，与有状态层（nn.Linear 等）解耦"
+    ]}
+  ]
+}

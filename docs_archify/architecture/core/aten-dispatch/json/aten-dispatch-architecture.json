@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "c10 Dispatcher 与算子注册",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 720]
+  },
+  "components": [
+    { "id": "py", "type": "frontend", "label": "Python / TorchScript 前端", "sublabel": "at::add / jit::Stack", "pos": [60, 90], "size": [220, 80] },
+    { "id": "dispatcher", "type": "backend", "label": "Dispatcher 单例", "sublabel": "call / callBoxed / redispatch", "pos": [420, 90], "size": [240, 90], "tag": "统一入口" },
+    { "id": "extractor", "type": "security", "label": "DispatchKeyExtractor", "sublabel": "实参+TLS → DispatchKeySet", "pos": [420, 250], "size": [240, 80] },
+    { "id": "entry", "type": "backend", "label": "OperatorEntry", "sublabel": "dispatchTable_[num_runtime_entries]", "pos": [420, 410], "size": [240, 90] },
+    { "id": "kernelfn", "type": "database", "label": "KernelFunction", "sublabel": "unboxed / boxed 指针", "pos": [780, 410], "size": [220, 80] },
+    { "id": "reg", "type": "cloud", "label": "TORCH_LIBRARY 注册", "sublabel": "registerImpl 写入调度表", "pos": [60, 410], "size": [220, 80] },
+    { "id": "native", "type": "cloud", "label": "aten-native 数值内核", "sublabel": "CPU/CUDA/...", "pos": [780, 250], "size": [220, 80] },
+    { "id": "stub", "type": "external", "label": "DispatchStub", "sublabel": "设备/指令集函数指针切换", "pos": [60, 250], "size": [220, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "c10 Dispatcher 子系统", "wraps": ["dispatcher", "extractor", "entry", "kernelfn"] }
+  ],
+  "connections": [
+    { "id": "py-disp", "from": "py", "to": "dispatcher", "label": "调用", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "disp-ext", "from": "dispatcher", "to": "extractor", "label": "提取键集", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "ext-entry", "from": "extractor", "to": "entry", "label": "lookup 最高优先级键", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "entry-kf", "from": "entry", "to": "kernelfn", "label": "取内核", "fromSide": "right", "toSide": "left", "labelDy": -16 },
+    { "id": "kf-native", "from": "kernelfn", "to": "native", "label": "执行", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+    { "id": "reg-entry", "from": "reg", "to": "entry", "label": "写入内核", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "分发机制要点", "items": [
+      "lookup 对 DispatchKeySet 取 highestPriorityTypeId 索引调度表",
+      "unboxed call 模板展开避开 boxing, 为 eager 热路径",
+      "redispatch 用裁剪后键集跳过 Autograd 层落到后端",
+      "DispatchStub 是 native 内部的设备级指针切换, 独立于完整 Dispatcher"
+    ]}
+  ]
+}

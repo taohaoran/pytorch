@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PyTorch 系统架构总览",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 760]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户脚本", "sublabel": "Python 代码", "pos": [40, 50], "size": [140, 56] },
+    { "id": "pyapi", "type": "frontend", "label": "Python API 层", "sublabel": "torch / nn / optim / utils", "pos": [240, 50], "size": [200, 56], "tag": "前端" },
+    { "id": "compile", "type": "backend", "label": "编译栈", "sublabel": "Dynamo / Inductor / TorchScript / FX", "pos": [500, 50], "size": [240, 56], "tag": "图编译" },
+    { "id": "autograd", "type": "backend", "label": "自动微分", "sublabel": "Engine / grad_fn / Function", "pos": [800, 50], "size": [200, 56], "tag": "反向传播" },
+
+    { "id": "aten", "type": "backend", "label": "ATen 算子库与分发", "sublabel": "Dispatcher / NativeFunctions / TensorIterator", "pos": [280, 200], "size": [280, 60], "tag": "算子分发" },
+    { "id": "c10", "type": "database", "label": "c10 核心库", "sublabel": "TensorImpl / DispatchKey / Storage / Allocator", "pos": [640, 200], "size": [260, 60], "tag": "核心抽象" },
+
+    { "id": "cpu", "type": "backend", "label": "CPU 内核", "sublabel": "native/cpu + vec256", "pos": [40, 360], "size": [180, 56] },
+    { "id": "cuda", "type": "backend", "label": "CUDA 内核", "sublabel": "native/cuda + CachingAllocator", "pos": [280, 360], "size": [200, 56] },
+    { "id": "accel", "type": "backend", "label": "其他加速后端", "sublabel": "MPS / HIP / XPU / Metal", "pos": [540, 360], "size": [200, 56] },
+    { "id": "dist", "type": "cloud", "label": "分布式", "sublabel": "c10d / DDP / FSDP / RPC", "pos": [800, 360], "size": [200, 56], "tag": "多机多卡" },
+
+    { "id": "profiler", "type": "security", "label": "性能分析", "sublabel": "torch.profiler / kineto", "pos": [40, 510], "size": [180, 56] },
+    { "id": "ext", "type": "external", "label": "外部库与硬件", "sublabel": "CUDA Runtime / NCCL / Triton / GPU·CPU", "pos": [320, 510], "size": [320, 56] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "PyTorch 仓库源码", "wraps": ["pyapi", "compile", "autograd", "aten", "c10", "cpu", "cuda", "accel", "dist", "profiler"] },
+    { "kind": "security-group", "label": "外部依赖（不在本仓库源码内）", "wraps": ["user", "ext"] }
+  ],
+  "connections": [
+    { "id": "user-pyapi", "from": "user", "to": "pyapi", "label": "调用", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "pyapi-compile", "from": "pyapi", "to": "compile", "label": "torch.compile", "variant": "dashed", "fromSide": "right", "toSide": "left", "labelAt": [470, 32] },
+    { "id": "compile-autograd", "from": "compile", "to": "autograd", "label": "AOTAutograd", "variant": "dashed", "fromSide": "right", "toSide": "left", "labelAt": [770, 32] },
+    { "id": "pyapi-aten", "from": "pyapi", "to": "aten", "label": "算子调用", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "compile-aten", "from": "compile", "to": "aten", "label": "降级算子", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "autograd-aten", "from": "autograd", "to": "aten", "label": "反向算子", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "aten-c10", "from": "aten", "to": "c10", "label": "核心类型", "variant": "default", "fromSide": "right", "toSide": "left" },
+    { "id": "aten-cpu", "from": "aten", "to": "cpu", "label": "CPU dispatch", "variant": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "aten-cuda", "from": "aten", "to": "cuda", "label": "CUDA dispatch", "variant": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "aten-accel", "from": "aten", "to": "accel", "label": "后端 dispatch", "variant": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "dist-aten", "from": "dist", "to": "aten", "label": "集体通信", "variant": "dashed", "fromSide": "top", "toSide": "right", "labelDy": -16 },
+    { "id": "cuda-ext", "from": "cuda", "to": "ext", "label": "CUDA / NCCL", "variant": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "cpu-ext", "from": "cpu", "to": "ext", "label": "CPU 指令集", "variant": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 16 },
+    { "id": "profiler-aten", "from": "profiler", "to": "aten", "label": "事件采集", "variant": "dashed", "fromSide": "top", "toSide": "left", "labelDy": -16 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "架构要点", "items": [
+      "Python 前端通过 torch/csrc 绑定调用 C++ ATen 算子",
+      "Dispatcher 按 DispatchKey 路由到 CPU/CUDA/MPS 等后端内核",
+      "Autograd 在前向构建反向图，反向由 Engine 多线程执行",
+      "编译栈（Dynamo+Inductor）追踪 Python 字节码为 FX 图并生成内核",
+      "分布式 c10d 提供 NCCL/Gloo 后端，DDP/FSDP 实现数据并行"
+    ] }
+  ]
+}

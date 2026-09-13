@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TorchDynamo 字节码追踪架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 560]
+  },
+  "components": [
+    { "id": "eval_frame", "type": "external", "label": "CPython eval_frame 钩子", "sublabel": "eval_frame.py: set_eval_frame", "pos": [40, 120], "size": [220, 64] },
+    { "id": "convert", "type": "backend", "label": "convert_frame", "sublabel": "convert_frame.py:815", "pos": [330, 60], "size": [220, 60], "tag": "帧入口" },
+    { "id": "guard", "type": "backend", "label": "Guard 求值", "sublabel": "guards.py: GuardManagerWrapper", "pos": [330, 200], "size": [220, 60] },
+    { "id": "translator", "type": "backend", "label": "InstructionTranslator", "sublabel": "symbolic_convert.py:5587", "pos": [630, 120], "size": [230, 64], "tag": "字节码符号执行" },
+    { "id": "vars", "type": "backend", "label": "Variables 类型系统", "sublabel": "variables/*.py", "pos": [630, 260], "size": [230, 60] },
+    { "id": "output", "type": "database", "label": "OutputGraph / FX 图", "sublabel": "output_graph.py", "pos": [940, 120], "size": [220, 64] },
+    { "id": "backend", "type": "external", "label": "AOTAutograd / 后端", "sublabel": "inductor 等", "pos": [1240, 120], "size": [210, 64] },
+    { "id": "repro", "type": "database", "label": "Repro 日志", "sublabel": "repro/", "pos": [940, 260], "size": [220, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "追踪期", "wraps": ["convert", "guard", "translator", "vars"] },
+    { "kind": "region", "label": "产物与下游", "wraps": ["output", "backend", "repro"] }
+  ],
+  "connections": [
+    { "id": "h-c", "from": "eval_frame", "to": "convert", "label": "帧执行", "variant": "emphasis" },
+    { "id": "c-g", "from": "convert", "to": "guard", "fromSide": "bottom", "toSide": "top" },
+    { "id": "g-t", "from": "guard", "to": "translator", "label": "失效则重编译", "labelDy": -14 },
+    { "id": "t-v", "from": "translator", "to": "vars", "fromSide": "bottom", "toSide": "top" },
+    { "id": "t-o", "from": "translator", "to": "output", "label": "产出 FX", "variant": "emphasis", "labelDy": -14 },
+    { "id": "o-b", "from": "output", "to": "backend", "label": "编译", "labelDy": -14 },
+    { "id": "t-r", "from": "output", "to": "repro", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "Dynamo 在 CPython eval_frame 挂钩子，按字节码符号执行",
+      "Guard 描述输入不变量；失效则触发重编译",
+      "OutputGraph 是 FX GraphModule，交给 AOTAutograd/后端"
+    ] }
+  ]
+}

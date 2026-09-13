@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "torchrun 启动与容错重启时序",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 720],
+    "column_fit": "spread"
+  },
+  "participants": [
+    { "id": "cli", "type": "frontend", "label": "torchrun", "sublabel": "CLI" },
+    { "id": "launcher", "type": "backend", "label": "Launcher", "sublabel": "elastic" },
+    { "id": "rdzv", "type": "backend", "label": "Rendezvous", "sublabel": "集合点" },
+    { "id": "etcd", "type": "external", "label": "etcd", "sublabel": "外部" },
+    { "id": "agent", "type": "backend", "label": "ElasticAgent", "sublabel": "进程管理" },
+    { "id": "worker", "type": "backend", "label": "Worker", "sublabel": "训练进程" }
+  ],
+  "segments": [
+    { "from": 180, "to": 360, "label": "首次会合" },
+    { "from": 400, "to": 600, "label": "监控与故障重启" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "cli", "to": "launcher", "y": 190, "label": "解析参数并启动", "variant": "emphasis" },
+    { "id": "m2", "from": "launcher", "to": "rdzv", "y": 230, "label": "join_rendezvous(world_size)" },
+    { "id": "m3", "from": "rdzv", "to": "etcd", "y": 270, "label": "注册/等待对端", "variant": "dashed" },
+    { "id": "m4", "from": "etcd", "to": "rdzv", "y": 310, "label": "对端到齐", "variant": "return" },
+    { "id": "m5", "from": "rdzv", "to": "launcher", "y": 350, "label": "返回 rank/store", "variant": "return" },
+    { "id": "m6", "from": "launcher", "to": "agent", "y": 410, "label": "拉起 worker 集" },
+    { "id": "m7", "from": "agent", "to": "worker", "y": 450, "label": "fork 子进程并设环境变量" },
+    { "id": "m8", "from": "worker", "to": "agent", "y": 490, "label": "心跳/就绪", "variant": "return" },
+    { "id": "m9", "from": "worker", "to": "agent", "y": 530, "label": "异常退出", "variant": "return" },
+    { "id": "m10", "from": "agent", "to": "rdzv", "y": 570, "label": "重新会合后重启", "variant": "dashed" }
+  ],
+  "activations": [
+    { "participant": "agent", "from": 410, "to": 570, "type": "backend" }
+  ]
+}

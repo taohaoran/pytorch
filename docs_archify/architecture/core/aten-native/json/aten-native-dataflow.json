@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "add_cpu 构建与并行遍历数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 380]
+  },
+  "stages": [
+    { "label": "登记" },
+    { "label": "形状推导" },
+    { "label": "类型统一" },
+    { "label": "并行调度" },
+    { "label": "执行" }
+  ],
+  "nodes": [
+    { "id": "cfg", "type": "frontend", "label": "Config", "sublabel": "add_output/add_input", "stage": 0, "row": 0 },
+    { "id": "shape", "type": "backend", "label": "形状推导", "sublabel": "compute_shape", "stage": 1, "row": 0 },
+    { "id": "types", "type": "backend", "label": "类型统一", "sublabel": "compute_types", "stage": 2, "row": 0 },
+    { "id": "kernel", "type": "cloud", "label": "cpu_kernel", "sublabel": "parallel_for", "stage": 3, "row": 0 },
+    { "id": "threads", "type": "external", "label": "多线程", "sublabel": "各线程调 lambda", "stage": 4, "row": 0 }
+  ],
+  "flows": [
+    { "from": "cfg", "to": "shape", "label": "操作数", "variant": "emphasis", "route": "straight" },
+    { "from": "shape", "to": "types", "label": "广播 shape", "route": "straight" },
+    { "from": "types", "to": "kernel", "label": "最终网格", "route": "straight" },
+    { "from": "kernel", "to": "threads", "label": "分块", "variant": "emphasis", "route": "straight" }
+  ]
+}

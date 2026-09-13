@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FX 图 IR 与追踪/解释架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 520]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户 nn.Module / 函数", "sublabel": "torch.fx.symbolic_trace", "pos": [40, 110], "size": [190, 64] },
+    { "id": "tracer", "type": "backend", "label": "Tracer", "sublabel": "_symbolic_trace.py / _Patcher 猴子补丁", "pos": [300, 110], "size": [210, 64], "tag": "符号追踪" },
+    { "id": "proxy", "type": "backend", "label": "Proxy", "sublabel": "proxy.py: 算子调用转 Node", "pos": [300, 240], "size": [210, 60] },
+    { "id": "graph", "type": "database", "label": "Graph / Node", "sublabel": "graph.py:1401 / node.py:260", "pos": [590, 170], "size": [210, 64], "tag": "FX IR" },
+    { "id": "passes", "type": "backend", "label": "图变换 / Passes", "sublabel": "graph_manipulation / passes / subgraph_rewriter", "pos": [880, 110], "size": [230, 60] },
+    { "id": "gencode", "type": "backend", "label": "CodeGen", "sublabel": "graph.py:369 生成 forward 源码", "pos": [880, 240], "size": [230, 60] },
+    { "id": "gm", "type": "database", "label": "GraphModule", "sublabel": "graph_module.py:519", "pos": [1190, 170], "size": [180, 64] },
+    { "id": "interp", "type": "backend", "label": "Interpreter / Transformer", "sublabel": "interpreter.py:52 逐节点执行", "pos": [1190, 310], "size": [180, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "追踪期（记录图）", "wraps": ["tracer", "proxy", "graph"] },
+    { "kind": "region", "label": "图变换与执行", "wraps": ["passes", "gencode", "gm", "interp"] }
+  ],
+  "connections": [
+    { "id": "u-tr", "from": "user", "to": "tracer", "label": "trace", "variant": "emphasis" },
+    { "id": "tr-pr", "from": "tracer", "to": "proxy", "fromSide": "bottom", "toSide": "top" },
+    { "id": "pr-g", "from": "proxy", "to": "graph", "label": "append Node", "labelDy": -14 },
+    { "id": "g-pa", "from": "graph", "to": "passes", "label": "变换", "labelDy": -14 },
+    { "id": "g-ge", "from": "graph", "to": "gencode", "label": "codegen", "labelDy": 14 },
+    { "id": "pa-gm", "from": "passes", "to": "gm", "label": "改写 Graph", "labelDy": -14 },
+    { "id": "ge-gm", "from": "gencode", "to": "gm", "fromSide": "top", "toSide": "bottom" },
+    { "id": "gm-in", "from": "gm", "to": "interp", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "FX 是 Python 级 IR：Graph 持有 Node 列表，Node.op 为 placeholder/.call_function 等",
+      "Tracer 通过 _Patcher 替换 torch 函数调用，Proxy 记录为 Node",
+      "GraphModule 可编译为可执行 forward，Interpreter 逐节点重放"
+    ] }
+  ]
+}

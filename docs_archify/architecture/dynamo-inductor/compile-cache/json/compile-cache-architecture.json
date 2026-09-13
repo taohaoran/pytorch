@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "torch.compile 入口与编译缓存分层",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 560]
+  },
+  "components": [
+    { "id": "entry", "type": "external", "label": "torch.compile", "sublabel": "torch/__init__.py:3045", "pos": [40, 120], "size": [200, 64] },
+    { "id": "config", "type": "backend", "label": "编译配置", "sublabel": "torch/_dynamo/config.py", "pos": [40, 260], "size": [200, 60] },
+    { "id": "dynamo", "type": "backend", "label": "Dynamo 追踪", "sublabel": "见 dynamo 叶子", "pos": [320, 120], "size": [200, 64] },
+    { "id": "guardcache", "type": "database", "label": "Guard 缓存", "sublabel": "帧→编译产物", "pos": [320, 260], "size": [200, 60] },
+    { "id": "fxcache", "type": "database", "label": "FxGraphCache", "sublabel": "codecache.py:2067", "pos": [600, 120], "size": [220, 64] },
+    { "id": "ondisk", "type": "database", "label": "OnDiskCache", "sublabel": "cache.py:249 磁盘缓存", "pos": [600, 260], "size": [220, 60] },
+    { "id": "filelock", "type": "security", "label": "FileLock", "sublabel": "torch/utils/_filelock.py", "pos": [600, 400], "size": [220, 60] },
+    { "id": "kernel", "type": "database", "label": "内核缓存", "sublabel": "CudaKernelParamCache / CppCodeCache", "pos": [900, 120], "size": [240, 64] },
+    { "id": "backend", "type": "external", "label": "AOT/Inductor 编译", "sublabel": "见 inductor 叶子", "pos": [900, 260], "size": [240, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "入口与配置", "wraps": ["entry", "config"] },
+    { "kind": "region", "label": "缓存层", "wraps": ["guardcache", "fxcache", "ondisk", "filelock", "kernel"] }
+  ],
+  "connections": [
+    { "id": "e-d", "from": "entry", "to": "dynamo", "label": "装饰/调用", "variant": "emphasis" },
+    { "id": "c-d", "from": "config", "to": "dynamo", "fromSide": "top", "toSide": "bottom" },
+    { "id": "d-g", "from": "dynamo", "to": "guardcache", "fromSide": "bottom", "toSide": "top" },
+    { "id": "g-f", "from": "guardcache", "to": "fxcache", "label": "未命中", "labelDy": -14 },
+    { "id": "f-o", "from": "fxcache", "to": "ondisk", "fromSide": "bottom", "toSide": "top" },
+    { "id": "o-l", "from": "ondisk", "to": "filelock", "fromSide": "bottom", "toSide": "top" },
+    { "id": "f-k", "from": "fxcache", "to": "kernel", "label": "内核产物", "labelDy": -14 },
+    { "id": "f-b", "from": "fxcache", "to": "backend", "label": "编译", "labelDy": 14 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "torch.compile 是门面，真正逻辑在 dynamo/inductor",
+      "缓存分三层：Guard→FxGraph→磁盘/内核",
+      "FileLock 保证多进程并发写盘安全"
+    ] }
+  ]
+}

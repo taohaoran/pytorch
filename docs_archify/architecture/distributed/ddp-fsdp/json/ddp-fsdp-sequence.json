@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "DDP 反向梯度分桶 allreduce 时序",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 720],
+    "column_fit": "spread"
+  },
+  "participants": [
+    { "id": "user", "type": "frontend", "label": "训练脚本", "sublabel": "Python" },
+    { "id": "ddp", "type": "backend", "label": "DDP", "sublabel": "distributed.py" },
+    { "id": "reducer", "type": "backend", "label": "Reducer", "sublabel": "reducer.cpp" },
+    { "id": "c10d", "type": "backend", "label": "c10d", "sublabel": "ProcessGroup" },
+    { "id": "nccl", "type": "external", "label": "NCCL", "sublabel": "外部组件" }
+  ],
+  "segments": [
+    { "from": 170, "to": 235, "label": "前向" },
+    { "from": 255, "to": 600, "label": "反向 + 梯度按 bucket 合批同步" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "user", "to": "ddp", "y": 185, "label": "forward(input)", "variant": "emphasis" },
+    { "id": "m2", "from": "ddp", "to": "user", "y": 218, "label": "输出", "variant": "return" },
+    { "id": "m3", "from": "user", "to": "ddp", "y": 275, "label": "loss.backward()" },
+    { "id": "m4", "from": "ddp", "to": "reducer", "y": 320, "label": "梯度就绪回调" },
+    { "id": "m6", "from": "reducer", "to": "c10d", "y": 375, "label": "bucket 合满即 allreduce" },
+    { "id": "m7", "from": "c10d", "to": "nccl", "y": 425, "label": "ncclAllReduce" },
+    { "id": "m8", "from": "nccl", "to": "c10d", "y": 475, "label": "完成", "variant": "return" },
+    { "id": "m9", "from": "c10d", "to": "reducer", "y": 525, "label": "Work.wait() 完成", "variant": "return" },
+    { "id": "m10", "from": "reducer", "to": "ddp", "y": 575, "label": "归一化梯度就绪", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "reducer", "from": 320, "to": 575, "type": "backend" },
+    { "participant": "c10d", "from": 375, "to": 525, "type": "backend" }
+  ]
+}

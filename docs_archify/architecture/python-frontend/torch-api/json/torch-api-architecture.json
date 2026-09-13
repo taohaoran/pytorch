@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "torch-api：Python 包入口与算子绑定面",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户脚本", "sublabel": "import torch", "pos": [30, 320], "size": [120, 60] },
+    { "id": "init", "type": "frontend", "label": "torch/__init__.py", "sublabel": "包入口 / 符号再导出", "pos": [210, 320], "size": [180, 70], "tag": "3570 行" },
+    { "id": "tensor", "type": "backend", "label": "Tensor 类", "sublabel": "_tensor.py 继承 TensorBase", "pos": [440, 170], "size": [180, 70], "tag": "Python 侧张量" },
+    { "id": "ops", "type": "backend", "label": "_ops.py 算子命名空间", "sublabel": "OpOverload / Packet", "pos": [440, 470], "size": [180, 70] },
+    { "id": "pybind", "type": "cloud", "label": "csrc/Module.cpp", "sublabel": "pybind11 绑定 py_module", "pos": [680, 320], "size": [180, 80], "tag": "C++ 绑定层" },
+    { "id": "c", "type": "security", "label": "torch._C 扩展", "sublabel": "libtorch C++ 核心", "pos": [990, 320], "size": [160, 80], "tag": "已编译二进制" },
+    { "id": "dispatcher", "type": "messagebus", "label": "PyTorch Dispatcher", "sublabel": "分发到设备内核", "pos": [990, 520], "size": [160, 70] }
+  ],
+  "connections": [
+    { "id": "u-init", "from": "user", "to": "init", "label": "import", "variant": "emphasis" },
+    { "id": "init-tensor", "from": "init", "to": "tensor", "label": "暴露 Tensor", "variant": "default", "labelDy": -18 },
+    { "id": "init-ops", "from": "init", "to": "ops", "label": "torch.ops", "variant": "default", "labelDy": 18 },
+    { "id": "tensor-pybind", "from": "tensor", "to": "pybind", "label": "继承 TensorBase", "variant": "emphasis", "labelDy": -14 },
+    { "id": "ops-pybind", "from": "ops", "to": "pybind", "label": "调用绑定算子", "variant": "default", "labelDy": 14 },
+    { "id": "pybind-c", "from": "pybind", "to": "c", "label": "py::module 注册", "variant": "default" },
+    { "id": "c-dispatcher", "from": "c", "to": "dispatcher", "label": "算子分发", "variant": "dashed", "labelDy": 30 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "torch 每进程仅可初始化一次（sys._torch_import_started 守护）",
+      "Tensor 继承自 C++ 侧 torch._C.TensorBase，Python 仅补充 dunder 与高阶方法",
+      "torch.ops 经 _OpNamespace / OpOverloadPacket 惰性解析算子"
+    ]}
+  ]
+}

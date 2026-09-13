@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "custom-ops：torch.library 自定义算子注册与 C++ 扩展",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "算子作者", "sublabel": "写 Python/C++ 算子", "pos": [30, 320], "size": [140, 60] },
+    { "id": "lib", "type": "backend", "label": "torch.library", "sublabel": "library.py:212", "pos": [270, 320], "size": [160, 80], "tag": "注册门面" },
+    { "id": "pyapi", "type": "database", "label": "_custom_op", "sublabel": "Python 自定义算子 API", "pos": [490, 140], "size": [160, 70] },
+    { "id": "cppext", "type": "messagebus", "label": "cpp_extension", "sublabel": "load/load_inline JIT", "pos": [490, 320], "size": [160, 70] },
+    { "id": "autog", "type": "cloud", "label": "autograd 注册", "sublabel": "_custom_op/autograd.py", "pos": [490, 500], "size": [160, 70] },
+    { "id": "reg", "type": "security", "label": "Dispatcher 注册表", "sublabel": "schema + kernel", "pos": [750, 320], "size": [170, 80] },
+    { "id": "ops", "type": "external", "label": "torch.ops.*", "sublabel": "统一调用入口", "pos": [1020, 320], "size": [140, 70] }
+  ],
+  "connections": [
+    { "id": "u-l", "from": "user", "to": "lib", "label": "注册算子", "variant": "emphasis" },
+    { "id": "l-p", "from": "lib", "to": "pyapi", "label": "Python 算子", "labelDy": -16 },
+    { "id": "l-c", "from": "lib", "to": "cppext", "label": "JIT 编译", "labelDy": 20 },
+    { "id": "l-a", "from": "lib", "to": "autog", "label": "注册 backward", "labelDy": 16 },
+    { "id": "p-r", "from": "pyapi", "to": "reg", "label": "注册 schema/kernel", "labelDy": -14 },
+    { "id": "c-r", "from": "cppext", "to": "reg", "label": "加载 .so", "labelDy": 14 },
+    { "id": "r-o", "from": "reg", "to": "ops", "label": "暴露算子" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "Library.define 声明算子 schema，Library.impl 按 DispatchKey 绑定内核",
+      "cpp_extension.load/load_inline 用 ninja 现场编译 C++/CUDA 扩展",
+      "注册后的自定义算子与内置算子一样经 torch.ops 调用"
+    ]}
+  ]
+}

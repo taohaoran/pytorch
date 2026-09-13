@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "RPC 框架与 DTensor 分布式张量架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 720]
+  },
+  "components": [
+    { "id": "rpc-api", "type": "frontend", "label": "RPC Python API", "sublabel": "api.py: rpc_async/rpc_sync/remote", "pos": [80, 50], "size": [260, 70] },
+    { "id": "dtensor-api", "type": "frontend", "label": "DTensor API", "sublabel": "_api.py: DTensor", "pos": [760, 50], "size": [260, 70] },
+    { "id": "rpc-agent", "type": "backend", "label": "RpcAgent", "sublabel": "rpc_agent.h 抽象", "pos": [80, 190], "size": [260, 70], "tag": "WorkerInfo" },
+    { "id": "device-mesh", "type": "backend", "label": "DeviceMesh", "sublabel": "device_mesh.py", "pos": [760, 190], "size": [260, 70], "tag": "Placement: Shard/Replicate" },
+    { "id": "rref", "type": "backend", "label": "RRef / Message", "sublabel": "rref_impl.h / message.h", "pos": [80, 330], "size": [260, 70], "tag": "远程引用" },
+    { "id": "sharding", "type": "backend", "label": "分片传播 / 重分布", "sublabel": "_sharding_prop.py / _redistribute.py", "pos": [760, 330], "size": [260, 70] },
+    { "id": "tensorpipe", "type": "external", "label": "TensorPipe 传输", "sublabel": "外部组件", "pos": [80, 480], "size": [260, 60] },
+    { "id": "c10d", "type": "backend", "label": "c10d 集合通信", "sublabel": "见 c10d 叶子", "pos": [760, 480], "size": [260, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "RPC 框架", "wraps": ["rpc-api", "rpc-agent", "rref"] },
+    { "kind": "region", "label": "DTensor 分布式张量", "wraps": ["dtensor-api", "device-mesh", "sharding", "c10d"] }
+  ],
+  "connections": [
+    { "id": "b1", "from": "rpc-api", "to": "rpc-agent", "label": "发起调用", "variant": "emphasis", "labelDy": 26 },
+    { "id": "b2", "from": "rpc-agent", "to": "rref", "label": "消息/RRef", "labelDy": 26 },
+    { "id": "b3", "from": "rref", "to": "tensorpipe", "label": "传输", "variant": "dashed", "labelDy": 26 },
+    { "id": "b4", "from": "dtensor-api", "to": "device-mesh", "label": "创建", "variant": "emphasis", "labelDy": 26 },
+    { "id": "b5", "from": "device-mesh", "to": "sharding", "label": "Spec", "labelDy": 26 },
+    { "id": "b6", "from": "sharding", "to": "c10d", "label": "all-gather/redistribute", "labelDy": 26 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "RPC", "items": ["rpc_async/rpc_sync/remote 远程调用", "RRef 跨进程远程对象引用", "默认 TensorPipe 传输后端"] },
+    { "dot": "amber", "title": "DTensor", "items": ["DeviceMesh 描述设备拓扑", "Shard/Replicate 描述分片", "算子按分片传播推导并经 c10d 重分布"] }
+  ]
+}

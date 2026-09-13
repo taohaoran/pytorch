@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "CPU 浮点张量构造数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 360]
+  },
+  "stages": [
+    { "label": "属性聚合" },
+    { "label": "键推导" },
+    { "label": "内存分配" },
+    { "label": "对象构造" }
+  ],
+  "nodes": [
+    { "id": "user", "type": "external", "label": "用户调用", "sublabel": "at::empty({2,2}, opts)", "stage": 0, "row": 0 },
+    { "id": "compute", "type": "backend", "label": "computeDispatchKey", "sublabel": "推导 DispatchKey::CPU", "stage": 1, "row": 0 },
+    { "id": "alloc", "type": "cloud", "label": "CPU 分配器 allocate", "sublabel": "→ DataPtr", "stage": 2, "row": 0 },
+    { "id": "build", "type": "backend", "label": "构造对象", "sublabel": "StorageImpl+TensorImpl", "stage": 3, "row": 0 }
+  ],
+  "flows": [
+    { "from": "user", "to": "compute", "label": "TensorOptions", "variant": "emphasis", "route": "straight" },
+    { "from": "compute", "to": "alloc", "label": "CPU 键 + nbytes", "route": "straight" },
+    { "from": "alloc", "to": "build", "label": "DataPtr", "variant": "emphasis", "route": "straight" }
+  ]
+}

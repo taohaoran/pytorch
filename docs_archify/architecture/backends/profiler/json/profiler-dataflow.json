@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Profiler 事件采集与导出数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 620]
+  },
+  "stages": [
+    { "label": "事件采集源" },
+    { "label": "采集缓冲" },
+    { "label": "Kineto 桥接" },
+    { "label": "结果导出" }
+  ],
+  "nodes": [
+    { "id": "ops", "type": "frontend", "label": "CPU/算子事件", "sublabel": "dispatch 打点", "stage": 0, "row": 0 },
+    { "id": "trace", "type": "frontend", "label": "CUDA/Python 栈", "sublabel": "kernel/traceback", "stage": 0, "row": 1 },
+    { "id": "buf", "type": "messagebus", "label": "事件缓冲", "sublabel": "collection.cpp", "stage": 1, "row": 0 },
+    { "id": "kineto", "type": "external", "label": "libkineto", "sublabel": "外部组件", "stage": 2, "row": 0 },
+    { "id": "chrome", "type": "database", "label": "Chrome Trace", "sublabel": "json 导出", "stage": 3, "row": 0 },
+    { "id": "table", "type": "database", "label": "Key Averages 表", "sublabel": "聚合统计", "stage": 3, "row": 1 }
+  ],
+  "flows": [
+    { "from": "ops", "to": "buf", "label": "事件", "variant": "emphasis" },
+    { "from": "trace", "to": "buf", "label": "事件" },
+    { "from": "buf", "to": "kineto", "label": "flush" },
+    { "from": "kineto", "to": "chrome", "label": "trace" },
+    { "from": "kineto", "to": "table", "label": "聚合" }
+  ]
+}

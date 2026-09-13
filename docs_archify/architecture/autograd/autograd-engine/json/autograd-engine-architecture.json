@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "C++ 反向引擎结构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 640]
+  },
+  "components": [
+    { "id": "py", "type": "frontend", "label": "Python backward", "sublabel": "torch.autograd.backward", "pos": [60, 90], "size": [200, 70] },
+    { "id": "engine", "type": "backend", "label": "Engine 单例", "sublabel": "execute/evaluate_function", "pos": [420, 90], "size": [220, 80], "tag": "反向引擎" },
+    { "id": "queue", "type": "messagebus", "label": "ReadyQueue", "sublabel": "device 任务队列", "pos": [420, 250], "size": [220, 80] },
+    { "id": "worker", "type": "cloud", "label": "worker 线程", "sublabel": "thread_main 主循环", "pos": [760, 250], "size": [220, 80] },
+    { "id": "node", "type": "backend", "label": "Node", "sublabel": "next_edges + apply()", "pos": [420, 430], "size": [220, 80] },
+    { "id": "buffer", "type": "database", "label": "InputBuffer", "sublabel": "梯度依赖计数", "pos": [760, 430], "size": [220, 80] },
+    { "id": "graph", "type": "security", "label": "GraphTask", "sublabel": "一次反向上下文", "pos": [60, 250], "size": [200, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "torch/csrc/autograd 反向引擎", "wraps": ["engine", "queue", "worker", "node", "buffer", "graph"] }
+  ],
+  "connections": [
+    { "id": "py-eng", "from": "py", "to": "engine", "label": "execute", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "eng-q", "from": "engine", "to": "queue", "fromSide": "bottom", "toSide": "top" },
+    { "id": "q-w", "from": "queue", "to": "worker", "label": "pop", "fromSide": "right", "toSide": "left" },
+    { "id": "w-node", "from": "worker", "to": "node", "label": "evaluate_function", "fromSide": "bottom", "toSide": "top" },
+    { "id": "node-buf", "from": "node", "to": "buffer", "label": "写下游梯度", "fromSide": "right", "toSide": "left" },
+    { "id": "buf-q", "from": "buffer", "to": "queue", "label": "就绪则入队", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+    { "id": "eng-g", "from": "engine", "to": "graph", "label": "GraphTask", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "调度模型", "items": [
+      "ReadyQueue + worker 线程池, 每 device 一个队列",
+      "InputBuffer 依赖计数实现无锁 DAG 调度",
+      "节点 apply 完成后写下游 InputBuffer, 归零则入队",
+      "GraphTask mutex 保护共享 captured vars"
+    ]}
+  ]
+}

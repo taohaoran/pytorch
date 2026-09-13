@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "device-context：设备、流/事件与 autocast 上下文",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "with stream/autocast", "pos": [30, 320], "size": [140, 60] },
+    { "id": "ctx", "type": "backend", "label": "上下文管理器", "sublabel": "cuda.stream/StreamContext", "pos": [220, 320], "size": [170, 80], "tag": "Python 门面" },
+    { "id": "base", "type": "database", "label": "Stream / Event 基类", "sublabel": "_streambase.py:11,19", "pos": [470, 140], "size": [170, 70] },
+    { "id": "ac", "type": "messagebus", "label": "autocast", "sublabel": "amp/autocast_mode.py:52", "pos": [500, 320], "size": [160, 70] },
+    { "id": "dev", "type": "cloud", "label": "设备管理", "sublabel": "cuda 设备/当前流", "pos": [470, 500], "size": [170, 70] },
+    { "id": "cpp", "type": "security", "label": "C++ Stream/Event", "sublabel": "csrc/Stream.cpp", "pos": [770, 320], "size": [160, 80] },
+    { "id": "rt", "type": "external", "label": "CUDA 运行时", "sublabel": "cudaStream* / 事件", "pos": [1010, 320], "size": [150, 70] }
+  ],
+  "connections": [
+    { "id": "u-c", "from": "user", "to": "ctx", "label": "with 语句", "variant": "emphasis" },
+    { "id": "c-b", "from": "ctx", "to": "base", "label": "流/事件句柄", "labelDy": -16 },
+    { "id": "c-a", "from": "ctx", "to": "ac", "label": "amp 类型策略", "labelDy": 18 },
+    { "id": "c-d", "from": "ctx", "to": "dev", "label": "设备上下文", "labelDy": 16 },
+    { "id": "b-cpp", "from": "base", "to": "cpp", "label": "绑定 C++ 对象", "labelDy": -14 },
+    { "id": "cpp-rt", "from": "cpp", "to": "rt", "label": "驱动流操作" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "_streambase 为各后端（CUDA/MPS/...）Stream/Event 提供公共 Python 基类",
+      "autocast 上下文按算子白名单决定 FP16/BF16 计算 dtype",
+      "StreamContext 切换当前流，operator 在此流上排队"
+    ]}
+  ]
+}

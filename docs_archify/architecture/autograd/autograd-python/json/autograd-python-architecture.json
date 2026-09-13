@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Python 自动求分 API 组成",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 600]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户脚本", "sublabel": "自定义算子/训练", "pos": [60, 90], "size": [200, 70] },
+    { "id": "func", "type": "frontend", "label": "Function", "sublabel": "forward/backward", "pos": [420, 90], "size": [200, 80], "tag": "自定义反向" },
+    { "id": "mode", "type": "security", "label": "grad 模式开关", "sublabel": "no_grad/inference_mode", "pos": [420, 250], "size": [200, 80] },
+    { "id": "funcal", "type": "frontend", "label": "functional", "sublabel": "vjp/jvp/jacobian", "pos": [420, 410], "size": [200, 80] },
+    { "id": "bind", "type": "backend", "label": "C++ 绑定", "sublabel": "python_cpp_function", "pos": [760, 90], "size": [200, 80] },
+    { "id": "engine", "type": "cloud", "label": "C++ 反向引擎", "sublabel": "autograd-engine", "pos": [760, 250], "size": [200, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "torch/autograd Python 层", "wraps": ["func", "mode", "funcal"] }
+  ],
+  "connections": [
+    { "id": "u-f", "from": "user", "to": "func", "label": "MyFn.apply", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "u-m", "from": "user", "to": "mode", "label": "with no_grad", "fromSide": "right", "toSide": "left" },
+    { "id": "u-fal", "from": "user", "to": "funcal", "label": "vjp/jvp", "fromSide": "right", "toSide": "left" },
+    { "id": "f-bind", "from": "func", "to": "bind", "label": "前向算子", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "bind-eng", "from": "bind", "to": "engine", "fromSide": "bottom", "toSide": "top" },
+    { "id": "m-eng", "from": "mode", "to": "engine", "label": "改 GradMode TLS", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "API 缝", "items": [
+      "Function: 用户实现 forward/backward, 经元类生成反向节点",
+      "grad_mode: RAII 上下文改 C++ GradMode TLS",
+      "functional: vjp/jvp/jacobian 线性求积工具",
+      "Python 侧只定义契约, 执行下沉 C++ 引擎"
+    ]}
+  ]
+}

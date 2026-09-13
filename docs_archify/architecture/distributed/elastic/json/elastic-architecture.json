@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Elastic 训练启动与容错架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 760]
+  },
+  "components": [
+    { "id": "cli", "type": "frontend", "label": "torchrun CLI", "sublabel": "run.py / launch.py", "pos": [80, 50], "size": [260, 66] },
+    { "id": "launcher", "type": "backend", "label": "Launcher", "sublabel": "elastic launch", "pos": [80, 180], "size": [260, 66] },
+    { "id": "rdzv", "type": "backend", "label": "RendezvousHandler", "sublabel": "etcd / static / c10d", "pos": [80, 310], "size": [260, 66], "tag": "集合点" },
+    { "id": "agent", "type": "backend", "label": "LocalElasticAgent", "sublabel": "local_elastic_agent.py:118", "pos": [80, 440], "size": [260, 66], "tag": "进程管理" },
+    { "id": "workers", "type": "backend", "label": "Worker 子进程", "sublabel": "world_size 个", "pos": [80, 570], "size": [260, 66] },
+    { "id": "events", "type": "messagebus", "label": "Events", "sublabel": "events/api.py", "pos": [760, 310], "size": [260, 66] },
+    { "id": "metrics", "type": "messagebus", "label": "Metrics", "sublabel": "metrics/api.py", "pos": [760, 440], "size": [260, 66] },
+    { "id": "etcd", "type": "external", "label": "etcd", "sublabel": "外部组件", "pos": [760, 570], "size": [260, 66] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "torch.distributed.elastic", "wraps": ["cli", "launcher", "rdzv", "agent", "workers", "events", "metrics"] }
+  ],
+  "connections": [
+    { "id": "e1", "from": "cli", "to": "launcher", "label": "启动", "variant": "emphasis", "labelDy": 24 },
+    { "id": "e2", "from": "launcher", "to": "rdzv", "label": "join_rendezvous", "labelDy": 24 },
+    { "id": "e3", "from": "rdzv", "to": "agent", "label": "rank/store", "labelDy": 24 },
+    { "id": "e4", "from": "agent", "to": "workers", "label": "拉起/监控/重启", "labelDy": 24 },
+    { "id": "e5", "from": "rdzv", "to": "etcd", "label": "发现/协调", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "e6", "from": "agent", "to": "events", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "e7", "from": "agent", "to": "metrics", "variant": "dashed", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "职责", "items": ["torchrun 拉起 N 个训练进程", "rendezvous 决定 world_size/rank", "agent 监控 worker 并在失败时重启重会合"] },
+    { "dot": "cyan", "title": "后端", "items": ["etcd 动态 rendezvous", "static/tcp 静态", "c10d 内置 rendezvous"] }
+  ]
+}

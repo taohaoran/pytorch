@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "DataLoader 多进程数据加载流水线",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 760]
+  },
+  "participants": [
+    { "id": "main", "type": "external", "label": "训练主进程", "sublabel": "用户循环" },
+    { "id": "it", "type": "backend", "label": "主迭代器", "sublabel": "DataLoaderIter" },
+    { "id": "worker", "type": "cloud", "label": "worker 子进程", "sublabel": "_worker_loop" },
+    { "id": "ds", "type": "database", "label": "Dataset", "sublabel": "__getitem__" }
+  ],
+  "segments": [
+    { "from": 150, "to": 260, "label": "启动与预取" },
+    { "from": 260, "to": 430, "label": "持续加载" },
+    { "from": 430, "to": 560, "label": "结束与回收" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "main", "to": "it", "y": 160, "label": "iter(dl) / next(it)", "variant": "emphasis" },
+    { "id": "m2", "from": "it", "to": "worker", "y": 200, "label": "spawn N 个 _worker_loop 并建队列" },
+    { "id": "m3", "from": "worker", "to": "ds", "y": 240, "label": "按 sampler 索引 __getitem__(idx)" },
+    { "id": "m4", "from": "worker", "to": "it", "y": 300, "label": "collate_fn 组批放入工作队列" },
+    { "id": "m5", "from": "worker", "to": "it", "y": 350, "label": "pin_memory 异步锁页（可选）" },
+    { "id": "m6", "from": "it", "to": "main", "y": 400, "label": "yield batch 给训练循环", "variant": "return" },
+    { "id": "m7", "from": "it", "to": "worker", "y": 470, "label": "发 _IterableDatasetStopIteration 结束信号" },
+    { "id": "m8", "from": "main", "to": "it", "y": 520, "label": "析构：join 子进程、关队列", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "it", "from": 160, "to": 530, "type": "backend" },
+    { "participant": "worker", "from": 200, "to": 480, "type": "cloud" }
+  ]
+}

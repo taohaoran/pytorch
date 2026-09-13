@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "张量分配与释放数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 380]
+  },
+  "stages": [
+    { "label": "请求分配" },
+    { "label": "系统分配" },
+    { "label": "封装" },
+    { "label": "持有" },
+    { "label": "释放" }
+  ],
+  "nodes": [
+    { "id": "req", "type": "frontend", "label": "算子", "sublabel": "需要新张量", "stage": 0, "row": 0 },
+    { "id": "alloc", "type": "cloud", "label": "CPUAllocator", "sublabel": "alloc_cpu", "stage": 1, "row": 0 },
+    { "id": "dp", "type": "database", "label": "DataPtr", "sublabel": "ptr+deleter", "stage": 2, "row": 0 },
+    { "id": "st", "type": "backend", "label": "StorageImpl", "sublabel": "持有缓冲区", "stage": 3, "row": 0 },
+    { "id": "free", "type": "external", "label": "deleter", "sublabel": "归还 malloc", "stage": 4, "row": 0 }
+  ],
+  "flows": [
+    { "from": "req", "to": "alloc", "label": "allocate(n)", "variant": "emphasis", "route": "straight" },
+    { "from": "alloc", "to": "dp", "label": "裸指针", "route": "straight" },
+    { "from": "dp", "to": "st", "label": "data_ptr_", "variant": "emphasis", "route": "straight" },
+    { "from": "st", "to": "free", "label": "析构 deleter", "route": "straight" }
+  ]
+}

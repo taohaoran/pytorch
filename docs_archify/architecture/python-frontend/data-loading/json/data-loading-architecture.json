@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "data-loading：DataLoader、Dataset、Sampler 与多进程 worker",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "训练循环", "sublabel": "for batch in dl", "pos": [30, 320], "size": [130, 60] },
+    { "id": "dl", "type": "backend", "label": "DataLoader", "sublabel": "dataloader.py:149", "pos": [210, 320], "size": [160, 80], "tag": "迭代器工厂" },
+    { "id": "dataset", "type": "database", "label": "Dataset", "sublabel": "Map/Iterable 两类", "pos": [440, 140], "size": [160, 70] },
+    { "id": "sampler", "type": "messagebus", "label": "Sampler", "sublabel": "Random/Batch/Distributed", "pos": [440, 320], "size": [160, 70] },
+    { "id": "workers", "type": "cloud", "label": "worker 子进程", "sublabel": "_utils/worker.py:244", "pos": [440, 500], "size": [170, 70] },
+    { "id": "collate", "type": "security", "label": "collate / pin_memory", "sublabel": "_utils/collate.py", "pos": [720, 320], "size": [170, 80] }
+  ],
+  "connections": [
+    { "id": "u-dl", "from": "user", "to": "dl", "label": "iter(dl)", "variant": "emphasis" },
+    { "id": "dl-ds", "from": "dl", "to": "dataset", "label": "__getitem__", "labelDy": -22 },
+    { "id": "dl-sm", "from": "dl", "to": "sampler", "label": "采样索引", "labelDy": 18 },
+    { "id": "dl-w", "from": "dl", "to": "workers", "label": "num_workers fork", "labelDy": 22 },
+    { "id": "w-c", "from": "workers", "to": "collate", "label": "组批/锁页", "labelDy": -16 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "num_workers=0 在主进程加载；>0 时 fork/spawn _worker_loop 子进程",
+      "prefetch_factor 默认 2，各 worker 预取 2 个 batch",
+      "persistent_workers=True 跨 epoch 保持子进程存活"
+    ]}
+  ]
+}

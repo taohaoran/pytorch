@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "torch.export 导出架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 520]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户 nn.Module / 可调用对象", "sublabel": "torch.export.export", "pos": [40, 110], "size": [200, 64] },
+    { "id": "dynamo", "type": "backend", "label": "Dynamo 追踪", "sublabel": "_trace.py 复用 dynamo", "pos": [310, 60], "size": [210, 60], "tag": "字节码级捕获" },
+    { "id": "dynshape", "type": "backend", "label": "动态形状约束", "sublabel": "dynamic_shapes.py: Dim / Constraint", "pos": [310, 200], "size": [210, 60] },
+    { "id": "artifact", "type": "database", "label": "ATen 图 + 签名", "sublabel": "ATenExportArtifact / ExportArtifact", "pos": [600, 130], "size": [220, 64], "tag": "FX GraphModule" },
+    { "id": "decomp", "type": "backend", "label": "Decomposition 与 Passes", "sublabel": "decomp_utils / passes/", "pos": [890, 60], "size": [220, 60] },
+    { "id": "ep", "type": "database", "label": "ExportedProgram", "sublabel": "exported_program.py:1070", "pos": [890, 200], "size": [220, 64], "tag": "规范化产物" },
+    { "id": "pkg", "type": "backend", "label": "序列化 pt2 包", "sublabel": "pt2_archive/_package.py", "pos": [1190, 130], "size": [220, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "追踪与规范化", "wraps": ["dynamo", "dynshape", "artifact", "decomp"] },
+    { "kind": "region", "label": "产物与持久化", "wraps": ["ep", "pkg"] }
+  ],
+  "connections": [
+    { "id": "u-dy", "from": "user", "to": "dynamo", "label": "export()", "variant": "emphasis" },
+    { "id": "u-ds", "from": "user", "to": "dynshape", "label": "动态形状输入", "labelDy": 12 },
+    { "id": "dy-art", "from": "dynamo", "to": "artifact", "label": "FX 图", "labelDy": -14 },
+    { "id": "ds-art", "from": "dynshape", "to": "artifact", "label": "约束", "labelDy": 12 },
+    { "id": "art-dec", "from": "artifact", "to": "decomp", "fromSide": "right", "toSide": "left", "label": "规范化", "labelDy": -14 },
+    { "id": "dec-ep", "from": "decomp", "to": "ep", "fromSide": "bottom", "toSide": "top" },
+    { "id": "ep-pkg", "from": "ep", "to": "pkg", "label": "save/load", "labelDy": -14 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "ExportedProgram = FX GraphModule + 图签名 + 形状约束 + 状态字典",
+      "动态形状由 Dim 标注与 _Constraint 不等式刻画 SymInt 取值范围",
+      "pt2 包把图、常量、元信息打包为自包含归档"
+    ] }
+  ]
+}

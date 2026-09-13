@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "ONNX 导出数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [
+      1400,
+      620
+    ]
+  },
+  "stages": [
+    {
+      "label": "模型输入"
+    },
+    {
+      "label": "FX 图捕获"
+    },
+    {
+      "label": "算子翻译"
+    },
+    {
+      "label": "ONNX IR"
+    },
+    {
+      "label": "序列化/验证"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "model",
+      "type": "external",
+      "label": "模型输入",
+      "sublabel": "nn.Module / ExportedProgram",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "fxgraph",
+      "type": "backend",
+      "label": "FX GraphModule",
+      "sublabel": "Dynamo/AOT 捕获",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "torchlib",
+      "type": "backend",
+      "label": "torchlib 翻译表",
+      "sublabel": "_torchlib/ops 算子注册",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "translate",
+      "type": "backend",
+      "label": "_translate_fx_graph",
+      "sublabel": "_core.py:767 节点翻译",
+      "stage": 2,
+      "row": 1
+    },
+    {
+      "id": "onnxir",
+      "type": "database",
+      "label": "ONNX IR 图",
+      "sublabel": "onnxscript ir.Graph",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "program",
+      "type": "database",
+      "label": "ONNXProgram",
+      "sublabel": "_onnx_program.py:204",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "proto",
+      "type": "database",
+      "label": "ONNX Proto / .onnx",
+      "sublabel": "序列化写盘",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "verify",
+      "type": "external",
+      "label": "ORT 校验",
+      "sublabel": "onnxruntime（外部）",
+      "stage": 4,
+      "row": 1
+    }
+  ],
+  "flows": [
+    {
+      "from": "model",
+      "to": "fxgraph",
+      "label": "dynamo=True",
+      "classification": "FX Graph",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "fxgraph",
+      "to": "translate",
+      "label": "逐节点",
+      "classification": "fx.Node",
+      "route": "vertical-channel"
+    },
+    {
+      "from": "translate",
+      "to": "onnxir",
+      "label": "构造",
+      "classification": "ir.Node/Value",
+      "route": "vertical-channel"
+    },
+    {
+      "from": "onnxir",
+      "to": "program",
+      "label": "封装",
+      "route": "vertical-channel"
+    },
+    {
+      "from": "program",
+      "to": "proto",
+      "label": "save",
+      "classification": "model.proto",
+      "route": "vertical-channel"
+    },
+    {
+      "from": "program",
+      "to": "verify",
+      "label": "ort",
+      "classification": "ORT 推理",
+      "variant": "dashed",
+      "route": "bottom-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "核心要点",
+      "items": [
+        "新版 dynamo 导出：FX 图经 torchlib 翻译为 ONNX 算子",
+        "ONNXProgram 持有 ir.Graph，可 save 为 .onnx 或用 ORT 验证",
+        "旧版 TorchScript 导出在 torchscript_exporter/，按 opset 分文件"
+      ]
+    }
+  ]
+}

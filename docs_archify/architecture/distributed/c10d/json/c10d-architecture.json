@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "c10d 分布式通信架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1280, 860]
+  },
+  "components": [
+    { "id": "py-api", "type": "frontend", "label": "Python 集合通信 API", "sublabel": "distributed_c10d.py", "pos": [60, 70], "size": [230, 76], "tag": "init_process_group" },
+    { "id": "pg", "type": "backend", "label": "ProcessGroup 抽象", "sublabel": "ProcessGroup.hpp", "pos": [470, 70], "size": [210, 76], "tag": "虚基类" },
+    { "id": "work", "type": "backend", "label": "Work 句柄", "sublabel": "Work.hpp", "pos": [470, 250], "size": [210, 66], "tag": "异步结果" },
+    { "id": "store", "type": "database", "label": "Store 键值存储", "sublabel": "TCP/File/Hash/Prefix", "pos": [60, 250], "size": [230, 66], "tag": "rendezvous" },
+    { "id": "group-reg", "type": "backend", "label": "GroupRegistry", "sublabel": "进程组注册", "pos": [470, 410], "size": [210, 60] },
+    { "id": "nccl", "type": "backend", "label": "ProcessGroupNCCL", "sublabel": "GPU 集合通信", "pos": [860, 50], "size": [190, 60] },
+    { "id": "gloo", "type": "backend", "label": "ProcessGroupGloo", "sublabel": "CPU 集合通信", "pos": [860, 160], "size": [190, 60] },
+    { "id": "mpi", "type": "backend", "label": "ProcessGroupMPI", "sublabel": "MPI 后端", "pos": [860, 270], "size": [190, 60] },
+    { "id": "ucc", "type": "backend", "label": "ProcessGroupUCC", "sublabel": "UCC 后端", "pos": [860, 380], "size": [190, 60] },
+    { "id": "nccl-lib", "type": "external", "label": "NCCL 库", "sublabel": "外部组件", "pos": [1120, 50], "size": [140, 60] },
+    { "id": "gloo-lib", "type": "external", "label": "Gloo 库", "sublabel": "外部组件", "pos": [1120, 160], "size": [140, 60] },
+    { "id": "etcd", "type": "external", "label": "etcd / TCP 主节点", "sublabel": "外部组件", "pos": [60, 410], "size": [230, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "c10d C++ 通信库", "wraps": ["pg", "work", "store", "group-reg", "nccl", "gloo", "mpi", "ucc"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "py-api", "to": "pg", "label": "绑定调用", "variant": "emphasis" },
+    { "id": "c2", "from": "pg", "to": "work", "label": "返回 Work", "labelDy": 22 },
+    { "id": "c3", "from": "py-api", "to": "store", "label": "rendezvous", "labelDy": 24 },
+    { "id": "c4", "from": "store", "to": "etcd", "label": "键值读写", "variant": "dashed", "labelDy": 24 },
+    { "id": "c5", "from": "pg", "to": "nccl", "label": "多态分发" },
+    { "id": "c6", "from": "pg", "to": "gloo" },
+    { "id": "c7", "from": "pg", "to": "mpi" },
+    { "id": "c8", "from": "pg", "to": "ucc" },
+    { "id": "c9", "from": "nccl", "to": "nccl-lib", "variant": "dashed" },
+    { "id": "c10", "from": "gloo", "to": "gloo-lib", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心抽象", "items": ["ProcessGroup 定义广播/集合通信虚接口", "Work 封装异步通信结果", "Store 提供 rendezvous 与键值协调"] },
+    { "dot": "cyan", "title": "后端可插拔", "items": ["NCCL(GPU)/Gloo(CPU)/MPI/UCC 多态实现", "GroupRegistry 负责默认组与命名组注册查找", "由 init_process_group backend 参数选择"] }
+  ]
+}

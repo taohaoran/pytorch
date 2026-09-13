@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "内存分配器与 StorageImpl",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 640]
+  },
+  "components": [
+    { "id": "op", "type": "frontend", "label": "算子内核", "sublabel": "产出新张量", "pos": [60, 90], "size": [200, 70] },
+    { "id": "iface", "type": "backend", "label": "Allocator 接口", "sublabel": "纯虚 allocate/copy_data", "pos": [60, 240], "size": [200, 80] },
+    { "id": "cpu", "type": "cloud", "label": "CPUAllocator", "sublabel": "alloc_cpu(malloc)", "pos": [60, 410], "size": [200, 80] },
+    { "id": "caching", "type": "security", "label": "CachingDeviceAllocator", "sublabel": "块/池统计基类", "pos": [420, 410], "size": [220, 80] },
+    { "id": "dataptr", "type": "database", "label": "DataPtr", "sublabel": "唯一指针+deleter", "pos": [420, 240], "size": [200, 80] },
+    { "id": "storage", "type": "backend", "label": "StorageImpl", "sublabel": "size_bytes+allocator 回指", "pos": [760, 240], "size": [220, 80] },
+    { "id": "os", "type": "external", "label": "操作系统 malloc", "sublabel": "不在本仓库源码内", "pos": [60, 560], "size": [200, 70] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "c10 内存层", "wraps": ["iface", "cpu", "caching", "dataptr", "storage"] }
+  ],
+  "connections": [
+    { "id": "op-if", "from": "op", "to": "iface", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "if-cpu", "from": "iface", "to": "cpu", "fromSide": "bottom", "toSide": "top" },
+    { "id": "cpu-os", "from": "cpu", "to": "os", "fromSide": "bottom", "toSide": "top" },
+    { "id": "cpu-dp", "from": "cpu", "to": "dataptr", "label": "返回 DataPtr", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "dp-st", "from": "dataptr", "to": "storage", "label": "持有", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "cach-dp", "from": "caching", "to": "dataptr", "label": "后端缓存实现", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "设计要点", "items": [
+      "Allocator 为纯虚接口, 按 DeviceType 可插拔",
+      "默认 CPUAllocator 直接 malloc 无缓存, CUDA 走 CachingDeviceAllocator",
+      "DataPtr 把 deleter 编码进唯一指针, StorageImpl 析构即归还",
+      "StorageImpl 持 materialize_fn_ 支持 COW/惰性物化"
+    ]}
+  ]
+}

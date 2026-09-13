@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CUDA 后端架构：dispatch / 分配器 / 流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1280, 720]
+  },
+  "components": [
+    { "id": "dispatcher", "type": "frontend", "label": "ATen Dispatcher", "sublabel": "算子分发", "pos": [440, 50], "size": [360, 66] },
+    { "id": "kernels", "type": "backend", "label": "CUDA 算子内核", "sublabel": "native/cuda/*.cu (221)", "pos": [440, 190], "size": [360, 66], "tag": "GPU kernel" },
+    { "id": "allocator", "type": "database", "label": "CUDACachingAllocator", "sublabel": "c10/cuda/CUDACachingAllocator", "pos": [100, 350], "size": [300, 70], "tag": "块缓存池" },
+    { "id": "stream", "type": "backend", "label": "CUDAStream / CUDAGuard / Event", "sublabel": "c10/cuda", "pos": [490, 350], "size": [300, 70], "tag": "流/设备上下文" },
+    { "id": "pinned", "type": "database", "label": "PinnedMemoryAllocator", "sublabel": "CachingHostAllocator", "pos": [880, 350], "size": [300, 70], "tag": "页锁定主机内存" },
+    { "id": "driver", "type": "external", "label": "CUDA Runtime / Driver", "sublabel": "外部组件", "pos": [440, 540], "size": [360, 66] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "ATen/cuda + c10/cuda", "wraps": ["dispatcher", "kernels", "allocator", "stream", "pinned"] }
+  ],
+  "connections": [
+    { "id": "d1", "from": "dispatcher", "to": "kernels", "label": "dispatch", "variant": "emphasis", "labelDy": 24 },
+    { "id": "d2", "from": "kernels", "to": "allocator", "label": "分配显存", "fromSide": "bottom", "toSide": "top", "labelDy": 20 },
+    { "id": "d3", "from": "kernels", "to": "stream", "label": "在流上启动", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d4", "from": "kernels", "to": "pinned", "label": "页锁定", "fromSide": "bottom", "toSide": "top", "labelDy": 20 },
+    { "id": "d5", "from": "allocator", "to": "driver", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d6", "from": "stream", "to": "driver", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d7", "from": "pinned", "to": "driver", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "CUDACachingAllocator", "items": ["按大小/流缓存已分配块，避免反复 cudaMalloc", "PYTORCH_CUDA_ALLOC_CONF 配置细分/扩展/碎片", "emptyCache/releaseCachedMemory 释放"] },
+    { "dot": "cyan", "title": "流与上下文", "items": ["CUDAStream 封装 cudaStream_t", "CUDAGuard 切换当前设备", "CUDAEvent 做流间同步"] }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "c10 核心对象关系",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 780]
+  },
+  "components": [
+    { "id": "key", "type": "security", "label": "DispatchKey / KeySet", "sublabel": "64位位级分发标签", "pos": [70, 90], "size": [220, 80], "tag": "取最高位" },
+    { "id": "tensor-impl", "type": "backend", "label": "TensorImpl", "sublabel": "sizes/strides/offset/dtype", "pos": [430, 90], "size": [220, 80] },
+    { "id": "device", "type": "external", "label": "Device", "sublabel": "类型+序号(int8)", "pos": [70, 270], "size": [220, 80] },
+    { "id": "storage", "type": "backend", "label": "Storage / StorageImpl", "sublabel": "数据缓冲区持有器", "pos": [430, 270], "size": [220, 80] },
+    { "id": "dataptr", "type": "database", "label": "DataPtr", "sublabel": "唯一指针+deleter+device", "pos": [760, 270], "size": [220, 80] },
+    { "id": "scalar", "type": "frontend", "label": "Scalar / ScalarType", "sublabel": "单元素变体与 dtype", "pos": [70, 450], "size": [220, 80] },
+    { "id": "sym", "type": "external", "label": "SymInt / SymBool", "sublabel": "符号化形状", "pos": [430, 450], "size": [220, 80] },
+    { "id": "allocator", "type": "backend", "label": "Allocator 接口", "sublabel": "纯虚 allocate/copy_data", "pos": [760, 450], "size": [220, 80] },
+    { "id": "opts", "type": "frontend", "label": "TensorOptions", "sublabel": "dtype/device/layout 聚合", "pos": [70, 630], "size": [220, 80] },
+    { "id": "backend-alloc", "type": "cloud", "label": "各后端分配器", "sublabel": "CPU/CUDA 缓存分配器", "pos": [760, 630], "size": [220, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "c10/core 核心抽象层(不依赖 aten)", "wraps": ["key", "tensor-impl", "device", "storage", "dataptr", "scalar", "sym", "allocator", "opts"] }
+  ],
+  "connections": [
+    { "id": "ti-key", "from": "tensor-impl", "to": "key", "label": "key_set_", "fromSide": "left", "toSide": "right" },
+    { "id": "ti-st", "from": "tensor-impl", "to": "storage", "label": "持有 storage_", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "dev-st", "from": "device", "to": "storage", "label": "device()", "fromSide": "right", "toSide": "left" },
+    { "id": "st-dp", "from": "storage", "to": "dataptr", "label": "data_ptr_", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "dp-alloc", "from": "dataptr", "to": "allocator", "label": "由其 allocate 产出", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "alloc-ba", "from": "allocator", "to": "backend-alloc", "label": "接口由其实现", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "opts-sc", "from": "opts", "to": "scalar", "label": "dtype 等属性", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "设计要点", "items": [
+      "TensorImpl 持有 Storage + 视图元数据, 多视图共享同一 Storage",
+      "DispatchKeySet 64 位 bitset, 取最高位 = 优先级最高键",
+      "Allocator 纯虚接口按 DeviceType 注册, c10 不依赖后端实现",
+      "Scalar/ScalarType 与 SymInt 作为侧挂类型, 不进入主分配链"
+    ]}
+  ]
+}

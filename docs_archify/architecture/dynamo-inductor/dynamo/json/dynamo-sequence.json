@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "torch.compile 首次编译调用链",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1400, 720]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "用户代码", "sublabel": "前向调用" },
+    { "id": "eval", "type": "backend", "label": "eval_frame", "sublabel": "CPython 钩子" },
+    { "id": "guard", "type": "backend", "label": "Guards", "sublabel": "守卫求值" },
+    { "id": "trans", "type": "backend", "label": "Translator", "sublabel": "字节码符号执行" },
+    { "id": "aot", "type": "backend", "label": "AOTAutograd", "sublabel": "decomposition+分区" },
+    { "id": "inductor", "type": "external", "label": "Inductor 后端", "sublabel": "代码生成" }
+  ],
+  "segments": [
+    { "from": 150, "to": 260, "label": "帧进入" },
+    { "from": 260, "to": 430, "label": "首次追踪" },
+    { "from": 430, "to": 600, "label": "后端编译" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "user", "to": "eval", "y": 170, "label": "调用 f(x)", "variant": "emphasis" },
+    { "id": "m2", "from": "eval", "to": "guard", "y": 210, "label": "查缓存/评估守卫" },
+    { "id": "m3", "from": "guard", "to": "eval", "y": 240, "label": "未命中→编译", "variant": "return" },
+    { "id": "m4", "from": "eval", "to": "trans", "y": 290, "label": "convert_frame 字节码符号执行", "variant": "emphasis" },
+    { "id": "m5", "from": "trans", "to": "guard", "y": 340, "label": "记录输入不变量", "variant": "dashed" },
+    { "id": "m6", "from": "trans", "to": "aot", "y": 380, "label": "FX GraphModule", "variant": "emphasis" },
+    { "id": "m7", "from": "aot", "to": "inductor", "y": 460, "label": "分解+分前后/反向图" },
+    { "id": "m8", "from": "inductor", "to": "aot", "y": 510, "label": "编译可执行内核", "variant": "return" },
+    { "id": "m9", "from": "aot", "to": "eval", "y": 560, "label": "编译产物+guard", "variant": "return" },
+    { "id": "m10", "from": "eval", "to": "user", "y": 620, "label": "执行并返回结果", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "trans", "from": 290, "to": 380, "type": "backend" },
+    { "participant": "aot", "from": 380, "to": 560, "type": "backend" }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TensorIterator 与通用算子",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1080, 640]
+  },
+  "components": [
+    { "id": "op", "type": "frontend", "label": "算子内核", "sublabel": "Unary/Binary/Pointwise/Reduce", "pos": [60, 90], "size": [220, 80] },
+    { "id": "config", "type": "backend", "label": "TensorIteratorConfig", "sublabel": "流式 builder", "pos": [420, 90], "size": [220, 80] },
+    { "id": "ti", "type": "backend", "label": "TensorIterator", "sublabel": "广播形状/strides 网格", "pos": [420, 250], "size": [220, 90] },
+    { "id": "cpu", "type": "cloud", "label": "cpu_kernel", "sublabel": "parallel_for 多线程", "pos": [420, 430], "size": [220, 80] },
+    { "id": "threads", "type": "external", "label": "线程池", "sublabel": "各线程调 lambda", "pos": [760, 430], "size": [220, 80] },
+    { "id": "vec", "type": "security", "label": "cpu_kernel_vec", "sublabel": "AVX 向量化快路径", "pos": [60, 430], "size": [220, 80] },
+    { "id": "reduce", "type": "database", "label": "parallel_reduce", "sublabel": "二维分块归约", "pos": [60, 250], "size": [220, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "aten/native 通用算子", "wraps": ["op", "config", "ti", "cpu", "vec", "reduce"] }
+  ],
+  "connections": [
+    { "id": "op-cfg", "from": "op", "to": "config", "label": "add_output/add_input", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "cfg-ti", "from": "config", "to": "ti", "label": "build()", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "ti-cpu", "from": "ti", "to": "cpu", "label": "遍历网格", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 18 },
+    { "id": "cpu-th", "from": "cpu", "to": "threads", "label": "分块", "fromSide": "right", "toSide": "left" },
+    { "id": "ti-red", "from": "ti", "to": "reduce", "label": "归约维", "fromSide": "left", "toSide": "right" },
+    { "id": "vec-cpu", "from": "vec", "to": "cpu", "label": "SIMD 快路径", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "设计要点", "items": [
+      "TensorIterator 把多维张量广播/coalesce 为一维遍历网格",
+      "cpu_kernel 用模板 lambda 解耦遍历调度与元素计算",
+      "parallel_for 数据并行, 归约用 parallel_reduce 二维分块合并",
+      "cpu_kernel_vec 按编译期指令集走 AVX 向量化快路径"
+    ]}
+  ]
+}

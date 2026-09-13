@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "非 CUDA 加速后端适配层",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1280, 640]
+  },
+  "components": [
+    { "id": "disp", "type": "frontend", "label": "ATen Dispatcher", "sublabel": "按 dispatch key", "pos": [470, 50], "size": [340, 64] },
+    { "id": "mps", "type": "backend", "label": "MPS 后端", "sublabel": "aten/mps + native/mps/*.mm", "pos": [60, 220], "size": [240, 70], "tag": "Apple" },
+    { "id": "hip", "type": "backend", "label": "HIP 后端", "sublabel": "native/hip + hipify CUDA", "pos": [360, 220], "size": [240, 70], "tag": "AMD" },
+    { "id": "xpu", "type": "backend", "label": "XPU 后端", "sublabel": "c10/xpu + native/xpu", "pos": [660, 220], "size": [240, 70], "tag": "Intel" },
+    { "id": "metal", "type": "backend", "label": "Metal 数学头", "sublabel": "c10/metal/*.h", "pos": [960, 220], "size": [240, 70], "tag": "Apple GPU 数学" },
+    { "id": "ext-mps", "type": "external", "label": "Metal / MPS 框架", "sublabel": "外部组件", "pos": [60, 420], "size": [240, 60] },
+    { "id": "ext-hip", "type": "external", "label": "ROCm/HIP 运行时", "sublabel": "外部组件", "pos": [360, 420], "size": [240, 60] },
+    { "id": "ext-xpu", "type": "external", "label": "Level Zero / SYCL", "sublabel": "外部组件", "pos": [660, 420], "size": [240, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "非 CUDA 加速器适配层", "wraps": ["mps", "hip", "xpu", "metal"] }
+  ],
+  "connections": [
+    { "id": "o1", "from": "disp", "to": "mps", "fromSide": "bottom", "toSide": "top", "variant": "emphasis" },
+    { "id": "o2", "from": "disp", "to": "hip", "fromSide": "bottom", "toSide": "top" },
+    { "id": "o3", "from": "disp", "to": "xpu", "fromSide": "bottom", "toSide": "top" },
+    { "id": "o4", "from": "disp", "to": "metal", "fromSide": "bottom", "toSide": "top" },
+    { "id": "o5", "from": "mps", "to": "ext-mps", "variant": "dashed" },
+    { "id": "o6", "from": "hip", "to": "ext-hip", "variant": "dashed" },
+    { "id": "o7", "from": "xpu", "to": "ext-xpu", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "MPS", "items": ["Objective-C++(.mm) 封装 Metal/MPS", "MPSAllocator/Device/Stream/Guard/Event", "native/mps/operations 实现算子"] },
+    { "dot": "amber", "title": "HIP / XPU / Metal", "items": ["HIP 经 hipify 复用 CUDA 内核", "XPU 有独立缓存分配器与事件", "Metal 仅提供 GPU 数学函数头"] }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "算子注册到调度表的数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 380]
+  },
+  "stages": [
+    { "label": "声明内核" },
+    { "label": "注册入表" },
+    { "label": "别名展开" },
+    { "label": "运行期查表" }
+  ],
+  "nodes": [
+    { "id": "def", "type": "cloud", "label": "TORCH_LIBRARY", "sublabel": "op+key+kernel", "stage": 0, "row": 0 },
+    { "id": "reg", "type": "backend", "label": "registerImpl", "sublabel": "写入 OperatorEntry", "stage": 1, "row": 0 },
+    { "id": "alias", "type": "security", "label": "别名键展开", "sublabel": "→ 各后端运行时键", "stage": 2, "row": 0 },
+    { "id": "table", "type": "database", "label": "dispatchTable_", "sublabel": "运行期 lookup", "stage": 3, "row": 0 }
+  ],
+  "flows": [
+    { "from": "def", "to": "reg", "label": "三元组", "variant": "emphasis", "route": "straight" },
+    { "from": "reg", "to": "alias", "label": "注册", "route": "straight" },
+    { "from": "alias", "to": "table", "label": "填充槽位", "variant": "emphasis", "route": "straight" }
+  ]
+}

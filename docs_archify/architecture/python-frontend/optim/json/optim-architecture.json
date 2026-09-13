@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "optim：优化器基类、具体算法与学习率调度",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 720]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "训练循环", "sublabel": "loss.backward()", "pos": [30, 320], "size": [130, 60] },
+    { "id": "opt", "type": "backend", "label": "Optimizer 基类", "sublabel": "optimizer.py:368", "pos": [210, 320], "size": [170, 80], "tag": "参数组/状态" },
+    { "id": "algos", "type": "database", "label": "具体算法", "sublabel": "SGD/Adam/AdamW/RMSprop", "pos": [450, 140], "size": [180, 70] },
+    { "id": "sched", "type": "messagebus", "label": "lr_scheduler", "sublabel": "Lambda/Cosine/StepLR", "pos": [450, 320], "size": [180, 70] },
+    { "id": "swa", "type": "cloud", "label": "swa_utils", "sublabel": "权重平均 SWA", "pos": [450, 500], "size": [180, 70] },
+    { "id": "params", "type": "security", "label": "参数与梯度", "sublabel": "param.data / .grad", "pos": [730, 320], "size": [170, 80] }
+  ],
+  "connections": [
+    { "id": "u-o", "from": "user", "to": "opt", "label": "step()", "variant": "emphasis" },
+    { "id": "o-a", "from": "opt", "to": "algos", "label": "算法子类实现", "labelDy": -16 },
+    { "id": "o-s", "from": "opt", "to": "sched", "label": "调节 lr" },
+    { "id": "o-w", "from": "opt", "to": "swa", "label": "收集权重", "labelDy": 16 },
+    { "id": "a-p", "from": "algos", "to": "params", "label": "原地更新", "labelDy": -14 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "关键事实", "items": [
+      "Optimizer 持有 param_groups 与 state（动量等二阶矩），step() 由子类实现",
+      "zero_grad(set_to_none=True) 将梯度置 None 以省内存",
+      "lr_scheduler 包装 optimizer，每次 epoch/step 调整 param_group['lr']"
+    ]}
+  ]
+}

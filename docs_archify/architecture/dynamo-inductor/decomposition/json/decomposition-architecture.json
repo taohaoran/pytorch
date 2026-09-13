@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "算子分解与原语架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 540]
+  },
+  "components": [
+    { "id": "aten", "type": "external", "label": "高阶 aten 算子", "sublabel": "如 conv2d_backward / dropout", "pos": [40, 130], "size": [210, 64] },
+    { "id": "table", "type": "database", "label": "分解表", "sublabel": "_decomp/__init__.py 注册表", "pos": [330, 130], "size": [220, 64], "tag": "register_decomposition" },
+    { "id": "fn", "type": "backend", "label": "分解函数", "sublabel": "decompositions.py", "pos": [620, 60], "size": [220, 60] },
+    { "id": "prims", "type": "database", "label": "prims 原语", "sublabel": "_prims/ 基本算子", "pos": [620, 260], "size": [220, 60] },
+    { "id": "refs", "type": "backend", "label": "refs 参考实现", "sublabel": "_refs/nn / linalg / special", "pos": [910, 130], "size": [230, 64] },
+    { "id": "backend", "type": "external", "label": "后端消费", "sublabel": "inductor / export / onnx", "pos": [1210, 130], "size": [230, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "分解机制", "wraps": ["table", "fn", "prims"] }
+  ],
+  "connections": [
+    { "id": "a-t", "from": "aten", "to": "table", "label": "查表", "variant": "emphasis" },
+    { "id": "t-f", "from": "table", "to": "fn", "label": "命中分解", "labelDy": -14 },
+    { "id": "f-p", "from": "fn", "to": "prims", "fromSide": "bottom", "toSide": "top" },
+    { "id": "p-r", "from": "prims", "to": "refs", "label": "参考实现", "labelDy": 14 },
+    { "id": "r-b", "from": "refs", "to": "backend", "label": "规范化图", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "分解表把高阶算子展开为更基本的算子序列",
+      "prims 是无渐变相异于前端的最小算子集",
+      "refs 是 prims 之上的参考实现，用于测试/导出"
+    ] }
+  ]
+}

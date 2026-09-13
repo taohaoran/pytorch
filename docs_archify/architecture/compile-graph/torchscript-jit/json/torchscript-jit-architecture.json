@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TorchScript JIT 架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1500, 560]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户代码", "sublabel": "torch.jit.script / trace", "pos": [40, 120], "size": [170, 64] },
+    { "id": "scripting", "type": "backend", "label": "Scripting 前端", "sublabel": "parser / ir_emitter", "pos": [280, 60], "size": [200, 60], "tag": "静态编译 Python 子集" },
+    { "id": "tracing", "type": "backend", "label": "Tracing 前端", "sublabel": "tracer.cpp", "pos": [280, 200], "size": [200, 60], "tag": "按执行记录算子" },
+    { "id": "ir", "type": "database", "label": "TorchScript IR", "sublabel": "Graph / Node / Value", "pos": [560, 130], "size": [200, 60] },
+    { "id": "passes", "type": "backend", "label": "优化 Passes", "sublabel": "DCE / 常量传播 / 融合", "pos": [830, 130], "size": [200, 60] },
+    { "id": "graph_executor", "type": "backend", "label": "GraphExecutor", "sublabel": "profiling 特化", "pos": [1100, 60], "size": [200, 60], "tag": "Plan 选择" },
+    { "id": "interpreter", "type": "backend", "label": "Interpreter", "sublabel": "Stack<IValue> 指令流", "pos": [1100, 200], "size": [200, 60] },
+    { "id": "ops", "type": "external", "label": "ATen 算子", "sublabel": "c10 算子注册", "pos": [1360, 200], "size": [120, 60] },
+    { "id": "serialize", "type": "database", "label": "序列化", "sublabel": "export/import/pickle/flatbuffer", "pos": [560, 330], "size": [220, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "编译期（torch/csrc/jit）", "wraps": ["scripting", "tracing", "ir", "passes"] },
+    { "kind": "region", "label": "运行期", "wraps": ["graph_executor", "interpreter"] }
+  ],
+  "connections": [
+    { "id": "u-s", "from": "user", "to": "scripting", "label": "script()" },
+    { "id": "u-t", "from": "user", "to": "tracing", "label": "trace()" },
+    { "id": "s-ir", "from": "scripting", "to": "ir", "label": "生成 Graph", "labelDy": -14 },
+    { "id": "t-ir", "from": "tracing", "to": "ir", "label": "记录 Graph", "labelDy": 14 },
+    { "id": "ir-p", "from": "ir", "to": "passes", "label": "图优化", "variant": "emphasis", "labelDy": -14 },
+    { "id": "p-ge", "from": "passes", "to": "graph_executor", "label": "优化后 Graph", "labelDy": -14 },
+    { "id": "ge-it", "from": "graph_executor", "to": "interpreter", "fromSide": "bottom", "toSide": "top", "variant": "emphasis" },
+    { "id": "it-ops", "from": "interpreter", "to": "ops" },
+    { "id": "ir-se", "from": "ir", "to": "serialize", "fromSide": "bottom", "toSide": "top", "label": "导出/导入", "variant": "dashed", "labelDy": 12 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "核心要点", "items": [
+      "IR 为 SSA 图：Node 持 opname 与 schema，Value 为张量/标量",
+      "ProfilingGraphExecutor 首次跑记录 shape，再特化编译",
+      "Interpreter 基于 Stack<IValue> 逐条执行 Instruction"
+    ] }
+  ]
+}

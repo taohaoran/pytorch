@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PyTorch Profiler 架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 720]
+  },
+  "components": [
+    { "id": "user", "type": "frontend", "label": "用户脚本", "sublabel": "with profiler.profile(...)", "pos": [430, 50], "size": [340, 64] },
+    { "id": "pyapi", "type": "backend", "label": "torch.profiler Python API", "sublabel": "profiler.py:1078 profile", "pos": [430, 180], "size": [340, 64], "tag": "活动选择/选项" },
+    { "id": "orch", "type": "backend", "label": "C++ 编排与采集", "sublabel": "csrc/profiler/orchestration + collection", "pos": [430, 310], "size": [340, 64], "tag": "事件/内存" },
+    { "id": "shim", "type": "backend", "label": "Kineto 桥接", "sublabel": "kineto_shim/client_interface", "pos": [430, 440], "size": [340, 64], "tag": "标注外部" },
+    { "id": "kineto", "type": "external", "label": "libkineto", "sublabel": "外部组件", "pos": [430, 570], "size": [340, 60] },
+    { "id": "mem", "type": "backend", "label": "内存分析 / Python 追踪", "sublabel": "_memory_profiler.py / python_tracer.py", "pos": [60, 310], "size": [300, 64] },
+    { "id": "export", "type": "messagebus", "label": "结果导出", "sublabel": "chrome trace / key averages", "pos": [840, 310], "size": [300, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "torch/profiler + torch/csrc/profiler", "wraps": ["pyapi", "orch", "shim", "mem", "export"] }
+  ],
+  "connections": [
+    { "id": "p1", "from": "user", "to": "pyapi", "label": "进入/退出 with", "variant": "emphasis", "labelDy": 22 },
+    { "id": "p2", "from": "pyapi", "to": "orch", "label": "启动", "labelDy": 22 },
+    { "id": "p3", "from": "orch", "to": "shim", "label": "注册/上报事件", "labelDy": 22 },
+    { "id": "p4", "from": "shim", "to": "kineto", "variant": "dashed" },
+    { "id": "p5", "from": "mem", "to": "orch", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "p6", "from": "orch", "to": "export", "variant": "dashed", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "能力", "items": ["CPU/算子活动、CUDA kernel、Python 调用栈", "内存分析、栈回溯合并", "导出 chrome trace / 表格"] },
+    { "dot": "cyan", "title": "依赖", "items": ["libkineto 为外部组件（vendored 或系统库）", "PyTorch 提供 shim 把事件喂给 kineto"] }
+  ]
+}

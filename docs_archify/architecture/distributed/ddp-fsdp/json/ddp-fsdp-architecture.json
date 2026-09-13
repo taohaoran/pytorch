@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DDP 与 FSDP 数据并行架构",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1200, 860]
+  },
+  "components": [
+    { "id": "user", "type": "frontend", "label": "用户训练脚本", "sublabel": "model(input).backward()", "pos": [430, 40], "size": [300, 70] },
+    { "id": "ddp", "type": "backend", "label": "DistributedDataParallel", "sublabel": "distributed.py", "pos": [140, 190], "size": [240, 70], "tag": "DDP" },
+    { "id": "fsdp", "type": "backend", "label": "FullyShardedDataParallel", "sublabel": "fully_sharded_data_parallel.py", "pos": [680, 190], "size": [240, 70], "tag": "FSDP" },
+    { "id": "reducer", "type": "backend", "label": "Reducer 梯度分桶", "sublabel": "reducer.cpp", "pos": [140, 340], "size": [240, 70], "tag": "bucket 合批" },
+    { "id": "flatparam", "type": "backend", "label": "FlatParam 全收集", "sublabel": "_flat_param.py", "pos": [680, 340], "size": [240, 70], "tag": "all-gather" },
+    { "id": "scaler", "type": "backend", "label": "ShardedGradScaler", "sublabel": "sharded_grad_scaler.py", "pos": [680, 480], "size": [240, 60], "tag": "分片缩放" },
+    { "id": "c10d", "type": "backend", "label": "c10d ProcessGroup", "sublabel": "集合通信", "pos": [430, 630], "size": [300, 66], "tag": "见 c10d 叶子" },
+    { "id": "nccl", "type": "external", "label": "NCCL 集合通信库", "sublabel": "外部组件", "pos": [430, 750], "size": [300, 50] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "数据并行策略层（基于 c10d）", "wraps": ["ddp", "fsdp", "reducer", "flatparam", "scaler"] }
+  ],
+  "connections": [
+    { "id": "a1", "from": "user", "to": "ddp", "label": "前向反向", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "a2", "from": "user", "to": "fsdp", "fromSide": "bottom", "toSide": "top" },
+    { "id": "a3", "from": "ddp", "to": "reducer", "label": "反向触发", "labelDy": 24 },
+    { "id": "a4", "from": "reducer", "to": "c10d", "label": "bucket allreduce", "fromSide": "bottom", "toSide": "top" },
+    { "id": "a5", "from": "fsdp", "to": "flatparam", "label": "逐层", "labelDy": 24 },
+    { "id": "a6", "from": "flatparam", "to": "c10d", "label": "all-gather/reduce-scatter", "fromSide": "bottom", "toSide": "top" },
+    { "id": "a7", "from": "flatparam", "to": "scaler", "variant": "dashed" },
+    { "id": "a8", "from": "c10d", "to": "nccl", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "DDP", "items": ["每卡完整复制模型", "反向时梯度按 bucket 合批 allreduce", "Reducer(C++) 负责分桶与通信重叠"] },
+    { "dot": "amber", "title": "FSDP", "items": ["参数/梯度/优化器状态按 rank 分片", "前向 all-gather 还原、反向 reduce-scatter", "省显存，支持 CPU offload 与分片 grad scaler"] }
+  ]
+}

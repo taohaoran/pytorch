@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "自定义 Function 前向与反向数据流",
+    "quality_profile": "showcase",
+    "locale": "zh-CN",
+    "viewBox": [1180, 380]
+  },
+  "stages": [
+    { "label": "调用" },
+    { "label": "前向" },
+    { "label": "记录节点" },
+    { "label": "反向回调" }
+  ],
+  "nodes": [
+    { "id": "u", "type": "external", "label": "用户", "sublabel": "MyFn.apply(x)", "stage": 0, "row": 0 },
+    { "id": "fwd", "type": "frontend", "label": "forward", "sublabel": "ctx.save_for_backward", "stage": 1, "row": 0 },
+    { "id": "node", "type": "backend", "label": "反向 Node", "sublabel": "挂到输出 grad_fn", "stage": 2, "row": 0 },
+    { "id": "bwd", "type": "cloud", "label": "backward", "sublabel": "用户实现", "stage": 3, "row": 0 }
+  ],
+  "flows": [
+    { "from": "u", "to": "fwd", "label": "apply", "variant": "emphasis", "route": "straight" },
+    { "from": "fwd", "to": "node", "label": "记录", "route": "straight" },
+    { "from": "node", "to": "bwd", "label": "引擎调用", "variant": "emphasis", "route": "straight" }
+  ]
+}
